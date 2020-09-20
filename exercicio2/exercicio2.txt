@@ -1,0 +1,73 @@
+CREATE DATABASE exercicio2;
+
+CREATE TABLE situacao_remessa(
+	id serial primary key,
+	descricao varchar(50) not null unique
+);
+
+INSERT INTO situacao_remessa(descricao) VALUES ('Criada');
+INSERT INTO situacao_remessa(descricao) VALUES ('Expedida');
+INSERT INTO situacao_remessa(descricao) VALUES ('Aceita');
+INSERT INTO situacao_remessa(descricao) VALUES ('NaoAceita');
+
+CREATE TABLE remessa(
+	id serial primary key, -- a palavra reservada serial cria um sequence integer automaticamente para nós, uma espécie de auto incremento
+	qtd_infracoes integer,
+	situacao integer not null,
+	foreign key (situacao) references situacao_remessa (id)
+);
+
+INSERT INTO remessa (qtd_infracoes, situacao) 
+VALUES (3, 1);
+
+INSERT INTO remessa (qtd_infracoes, situacao) 
+VALUES (3, 1);
+
+CREATE TABLE infracao(
+	id serial primary key,
+	data_hora timestamp not null,
+	equipamento varchar(50),
+	velocidade_medida integer not null,
+	velocidade_permitida integer not null,
+	infracao_valida boolean not null,
+	remessa integer not null,
+	foreign key (remessa) references remessa (id)
+);
+
+INSERT INTO infracao(data_hora, equipamento, velocidade_medida, velocidade_permitida, infracao_valida, remessa)
+VALUES ('20/09/20 16:56:17', 'Equipamento 2', 80, 80, false, 1);
+
+INSERT INTO infracao(data_hora, equipamento, velocidade_medida, velocidade_permitida, infracao_valida, remessa)
+VALUES ('21/09/20 13:32:40', 'Equipamento 1', 94, 80, true, 1);
+
+INSERT INTO infracao(data_hora, equipamento, velocidade_medida, velocidade_permitida, infracao_valida, remessa)
+VALUES ('22/09/20 18:15:21', 'Equipamento 3', 75, 60, true, 1);
+
+INSERT INTO infracao(data_hora, equipamento, velocidade_medida, velocidade_permitida, infracao_valida, remessa)
+VALUES ('20/10/20 10:14:07', 'Equipamento 1', 97, 80, true, 2);
+
+INSERT INTO infracao(data_hora, equipamento, velocidade_medida, velocidade_permitida, infracao_valida, remessa)
+VALUES ('21/10/20 14:27:45', 'Equipamento 2', 75, 60, false, 2);
+
+INSERT INTO infracao(data_hora, equipamento, velocidade_medida, velocidade_permitida, infracao_valida, remessa)
+VALUES ('22/10/20 17:54:23', 'Equipamento 3', 57, 60, false, 2);
+
+--1. Monte uma busca para criação de um relatório que apresente todas as infrações com velocidade medida
+--igual ou acima de 20% da velocidade permitida. Ordenar a lista por data e hora da infração.
+SELECT * 
+FROM remessa, infracao
+WHERE 
+	remessa.id = infracao.remessa AND 
+	infracao.velocidade_medida >= infracao.velocidade_permitida * 1.2
+ORDER BY infracao.data_hora;
+
+--2. Monte uma busca que para cada remessa apresente sua identificação, sua situação, o total de infrações,
+--total de infrações válidas e total de infrações inválidas. Ordenar a consulta pela situação das remessas.
+SELECT remessa.id as identificacao, situacao_remessa.descricao as situacao, remessa.qtd_infracoes -  COUNT(*) as total_infracoes_validas, COUNT(*) as total_infracoes_invalidas
+FROM remessa, situacao_remessa, infracao
+WHERE
+	remessa.id = infracao.remessa AND
+	remessa.situacao = situacao_remessa.id AND
+	infracao.infracao_valida = false
+GROUP BY remessa.id, situacao_remessa.descricao
+ORDER BY remessa.id;
